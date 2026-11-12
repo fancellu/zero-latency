@@ -1,0 +1,124 @@
+<title>Zero Latency</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=block">
+<style>
+  /* Layout: a dark theatre. The lit screen fills the window (letterboxed), the control rail sits under it. */
+  :root {
+    --hall: #120704;
+    --rail: #1d0d07;
+    --rule: #4a2614;
+    --cream: #f0dfc2;
+    --dim: #a98a6b;
+    --lamp: #f2a54a;
+    --body: "Libre Baskerville", Georgia, serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--hall); color: var(--cream); font-family: var(--body); display: flex; flex-direction: column; overflow: hidden; }
+  .stage { flex: 1 1 auto; min-height: 0; display: grid; place-items: center; padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  canvas { display: block; background: #000; box-shadow: 0 0 0 1px var(--rule); }
+  .bar { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; background: var(--rail); border-top: 1px solid var(--rule);
+    padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  button { font: inherit; font-size: 13px; color: var(--cream); background: transparent; border: 1px solid var(--rule); border-radius: 4px; height: 34px; min-width: 34px; padding: 0 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  button:hover { border-color: var(--lamp); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+  button[aria-pressed="true"] { color: var(--lamp); border-color: var(--lamp); }
+  #play { width: 44px; color: var(--lamp); }
+  #play svg { width: 16px; height: 16px; fill: currentColor; }
+  input[type=range] { flex: 1 1 auto; min-width: 60px; accent-color: var(--lamp); }
+  .time { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--dim); white-space: nowrap; }
+  @media (max-width: 520px) { .bar { gap: 8px; } .label { display: none; } }
+</style>
+
+<div class="stage" id="stage"><canvas id="c" width="1280" height="720" aria-label="Zero Latency: Anatomy of Local-First Sync, a 15-second shadow-puppet explainer"></canvas></div>
+<div class="bar">
+  <button id="play" aria-label="Play"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="icon" d="M3 1.5v13l11-6.5z"/></svg></button>
+  <input id="scrub" type="range" min="0" max="15" step="0.001" value="0" aria-label="Scrub through the animation">
+  <span class="time" id="time">0.0 / 15.0 s</span>
+  <button id="snd" aria-pressed="true" aria-label="Sound on"><span aria-hidden="true">♪</span><span class="label">Sound</span></button>
+  <button id="loop" aria-pressed="true" aria-label="Loop on"><span aria-hidden="true">↻</span><span class="label">Loop</span></button>
+</div>
+
+<script>
+/*__HARNESS__*/
+</script>
+<script>
+/*__SOUND__*/
+</script>
+<script>
+/*__SCENE__*/
+</script>
+<script>
+/*__SCORE__*/
+</script>
+<script>
+// ---------------- player ----------------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const playBtn = document.getElementById('play'), icon = document.getElementById('icon'), scrub = document.getElementById('scrub');
+const timeEl = document.getElementById('time'), sndBtn = document.getElementById('snd'), loopBtn = document.getElementById('loop');
+const stageEl = document.getElementById('stage');
+scrub.max = DURATION;
+let cur = 0, playing = false, loop = true, soundOn = true, stopSound = null, raf = 0, t0Wall = 0, t0Anim = 0, fontsReady = false;
+
+function draw(t) {
+  cur = Math.max(0, Math.min(DURATION, t));
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  explainer(ctx, 1280, 720, cur);
+  scrub.value = cur;
+  timeEl.textContent = `${cur.toFixed(1)} / ${DURATION.toFixed(1)} s`;
+}
+window.seek = (t) => draw(t);
+window.DURATION = DURATION;
+window.scoreSound = scoreSound;
+
+function fit() {
+  const r = stageEl.getBoundingClientRect(), k = Math.min(r.width / 1280, r.height / 720);
+  cv.style.width = Math.floor(1280 * k) + 'px'; cv.style.height = Math.floor(720 * k) + 'px';
+}
+window.addEventListener('resize', fit); fit();
+
+function killSound() { if (stopSound) { stopSound(); stopSound = null; } }
+function startSound() { killSound(); if (soundOn && playing) { try { stopSound = SOUND.live(scoreSound, cur, { voiceover: false }); } catch (e) { stopSound = null; } } }
+function setIcon() { icon.setAttribute('d', playing ? 'M3 1.5h3.6v13H3zM9.4 1.5H13v13H9.4z' : 'M3 1.5v13l11-6.5z'); playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); }
+function tick(now) {
+  if (!playing) return;
+  let t = t0Anim + (now - t0Wall) / 1000;
+  if (t >= DURATION) {
+    if (loop) { t0Anim = 0; t0Wall = now; t = 0; draw(0); startSound(); }
+    else { draw(DURATION); pause(); return; }
+  } else draw(t);
+  raf = requestAnimationFrame(tick);
+}
+function play() {
+  if (!fontsReady) return;
+  if (cur >= DURATION - 0.01) cur = 0;
+  playing = true; setIcon();
+  t0Anim = cur; t0Wall = performance.now();
+  startSound();
+  raf = requestAnimationFrame(tick);
+}
+function pause() { playing = false; setIcon(); cancelAnimationFrame(raf); killSound(); }
+playBtn.addEventListener('click', () => (playing ? pause() : play()));
+scrub.addEventListener('input', () => {
+  const t = parseFloat(scrub.value);
+  killSound(); draw(t);
+  if (playing) { t0Anim = t; t0Wall = performance.now(); }
+});
+scrub.addEventListener('change', () => { if (playing) startSound(); });
+sndBtn.addEventListener('click', () => {
+  soundOn = !soundOn; sndBtn.setAttribute('aria-pressed', soundOn); sndBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+  if (soundOn) startSound(); else killSound();
+});
+loopBtn.addEventListener('click', () => { loop = !loop; loopBtn.setAttribute('aria-pressed', loop); loopBtn.setAttribute('aria-label', loop ? 'Loop on' : 'Loop off'); });
+document.addEventListener('keydown', (e) => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); playing ? pause() : play(); } });
+
+(async () => {
+  try { await Promise.all(FONT_SPECS.map((f) => document.fonts.load(f, 'AaZz09%+'))); await document.fonts.ready; } catch (e) {}
+  fontsReady = true;
+  draw(1.25);   // poster frame until play
+  cur = 0; scrub.value = 0; timeEl.textContent = `0.0 / ${DURATION.toFixed(1)} s`;
+  window.__ready = true;
+})();
+</script>

@@ -1,0 +1,17 @@
+{
+  "name": "zero-latency",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero Latency: Anatomy of Local-First Sync, a 15-second shadow-puppet explainer drawn on canvas with synthesized sound",
+  "scripts": {
+    "build": "node build.cjs",
+    "build:local": "node build.cjs --local-fonts",
+    "render": "node build.cjs && node render.cjs dist/zero-latency.html dist/zero-latency.mp4",
+    "render:local": "node build.cjs --local-fonts && node render.cjs dist/zero-latency.local.html dist/zero-latency.mp4"
+  },
+  "devDependencies": {
+    "@fontsource/im-fell-english": "^5.0.0",
+    "@fontsource/libre-baskerville": "^5.0.0",
+    "puppeteer": "^25.17.0"
+  }
+}

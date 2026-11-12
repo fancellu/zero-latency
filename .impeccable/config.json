@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "src/index.tpl.html"
+        ],
+        "createdAt": "2026-11-12T18:10:16.937Z",
+        "reason": "Claude verified: all text colours on --hall #140805 measure cream 15.0:1, dim 7.5:1, lamp 9.6:1; same palette as storyboard.tpl.html"
+      },
+      {
+        "rule": "italic-serif-display",
+        "value": "*",
+        "files": [
+          "src/index.tpl.html"
+        ],
+        "createdAt": "2026-11-12T18:11:03.037Z",
+        "reason": "User asked for the index to use the same styling as storyboard.tpl.html; this masthead is copied from it (shadow-puppet playbill register)"
+      },
+      {
+        "rule": "hero-eyebrow-chip",
+        "value": "*",
+        "files": [
+          "src/index.tpl.html"
+        ],
+        "createdAt": "2026-11-12T18:11:03.273Z",
+        "reason": "User asked for the index to use the same styling as storyboard.tpl.html; this masthead is copied from it (shadow-puppet playbill register)"
+      }
+    ]
+  }
+}

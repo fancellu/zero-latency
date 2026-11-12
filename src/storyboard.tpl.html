@@ -1,0 +1,122 @@
+<title>Zero Latency Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=block">
+<style>
+  /* Layout: a playbill. Masthead, then the beats as a two-column run of lit screens with their cue notes, then the assumptions. */
+  :root {
+    --hall: #140805;        /* the dark auditorium */
+    --stall: #1f0e08;       /* panel ground */
+    --rule: #4a2614;        /* hairlines, frames */
+    --cream: #f0dfc2;       /* body text */
+    --dim: #b99b7c;         /* secondary text */
+    --lamp: #f2a54a;        /* lamp amber accent */
+    --display: "IM Fell English", "Iowan Old Style", Georgia, serif;
+    --body: "Libre Baskerville", Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+  html { background: var(--hall); }
+  body { background: var(--hall); color: var(--cream); font-family: var(--body); font-size: 15px; line-height: 1.6; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header.mast { display: grid; gap: 6px; padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+  .eyebrow { font-family: var(--body); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lamp); }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(36px, 6vw, 64px); line-height: 1.05; margin: 0; text-wrap: balance; }
+  h1 em { color: var(--lamp); }
+  .meta { color: var(--dim); font-size: 14px; max-width: 70ch; margin: 6px 0 0; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 32px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .beat { display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: #000; border: 1px solid var(--rule); box-shadow: 0 0 0 6px var(--stall), 0 0 0 7px var(--rule); }
+  .screen canvas { display: block; width: 100%; height: 100%; }
+  .head h2 .n { color: var(--lamp); margin-right: 0.45em; }
+  .num { position: absolute; left: 10px; top: 10px; font-family: var(--display); font-size: 22px; line-height: 1; color: var(--cream); background: rgba(20, 8, 5, 0.82); padding: 6px 10px 4px; border: 1px solid var(--rule); }
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-top: 6px; }
+  .head h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0; }
+  .time { font-variant-numeric: tabular-nums; color: var(--lamp); font-size: 14px; letter-spacing: 0.04em; }
+  dl { margin: 0; display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 8px 14px; font-size: 14px; }
+  dt { color: var(--dim); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 3px; }
+  dd { margin: 0; min-width: 0; }
+  .onscreen { font-family: var(--display); font-size: 18px; }
+  .kind { display: inline-block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hall); background: var(--lamp); padding: 1px 7px; margin-right: 6px; }
+  .kind.cont { background: var(--dim); }
+  @media (max-width: 480px) { dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } dd { margin-bottom: 8px; } }
+  section.notes { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--rule); display: grid; gap: 12px; }
+  section.notes h2 { font-family: var(--display); font-weight: 400; font-size: 30px; margin: 0; }
+  section.notes ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; max-width: 75ch; }
+  .loading { color: var(--dim); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Storyboard · Shadow Puppet Theatre · 15 s</div>
+    <h1>Zero Latency: <em>Anatomy of Local-First Sync</em></h1>
+    <p class="meta">Eight key frames from the explainer, drawn by the same scene code as the player at the times shown, with each beat's on-screen text, transition and sound cues.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <section class="notes">
+    <h2>Facts and numbers assumed</h2>
+    <ul>
+      <li><strong>280 ms</strong> is an illustrative cloud round trip (phone to server and back). Real mobile round trips vary widely, roughly 50 to 300+ ms. The counter runs in slow motion so the wait reads.</li>
+      <li><strong>0 ms</strong> means no network wait. A write to the device's own database (IndexedDB, SQLite) still takes a fraction of a millisecond to a few milliseconds.</li>
+      <li>The <strong>outbox</strong> stands for the queue of pending changes (an operation log) that a sync engine sends whenever a connection is available.</li>
+      <li>The merge example uses two edits to <strong>different fields</strong> (title on Phone A, due date on Phone B), which a CRDT keeps both of. For two edits to the same field, a CRDT picks a deterministic winner (for example last-writer-wins), so every copy still converges.</li>
+      <li><strong>CRDTs</strong> are named as the merge method because they are the common local-first choice; some systems use operational transforms or server-side reconciliation instead.</li>
+      <li>Phones stand in for any client device, and the server stands in for any sync peer or relay.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/*__HARNESS__*/
+</script>
+<script>
+/*__SCENE__*/
+</script>
+<script>
+const BEATS = [
+  { t: 1.25, name: 'Hook', span: '0.0 – 1.9 s', text: '“Zero Latency” / “Anatomy of Local-First Sync”', kind: 'Opening',
+    how: 'The oil lamp sputters alight, then the title card drops on its strings and swings to rest. A soft fern held near the lamp frames the left edge.',
+    sound: 'Lamp whump and three sputters; hum and room bed start. Hide rustle as the card falls, wooden knock as it lands, one struck bronze note.' },
+  { t: 3.5, name: 'Cloud-first', span: '1.9 – 4.2 s', text: '“Cloud-first” · “Server” · “280 ms” · “network wait”', kind: 'Continuous',
+    how: 'The title card is hoisted to the top-left and stays there as the running header. The phone hops in, the server rises on its rod, a hand taps. The request vine grows to the server and the response vine grows back while the board counts the wait; the screen sits on a red gel with a spinner until the answer lands.',
+    sound: 'Hop knocks and rustles, a rod knock on the tap, a brush stroke as each vine grows, wooden counter ticks (at most 11 a second) slowing into 280, then a dull low bronze as the reply lands.' },
+  { t: 5.35, name: 'Local-first', span: '4.2 – 6.2 s', text: '“Local-first” · “Local store” · “0 ms” · “network wait”', kind: 'Scene change',
+    how: 'The lamp is turned down and up: a before/after contrast, so the stage is re-set in the dark. The same phone now has a local store beside it. The tap\'s note drops straight in and the board stamps “0 ms”. This is the key moment: the flame flares and lace stars burst.',
+    sound: 'Lamp dimming and returning, a tap, the note clacking into the store, then the gong with a bright bronze over it (the biggest hit of the piece).' },
+  { t: 7.45, name: 'Background sync', span: '6.2 – 7.8 s', text: '“Sync later” · “Outbox”', kind: 'Continuous',
+    how: 'The 0 ms board is hoisted away. The outbox tray and the server rise in on their rods. A copy of the note drops into the outbox, then rides the sync vine to the server, whose lights flash.',
+    sound: 'Slide and rustle as the props rise, two short brush strokes, a clack into the outbox, a knock and a soft bronze as the note reaches the server.' },
+  { t: 8.95, name: 'Offline', span: '7.8 – 9.25 s', text: '“Offline” with a red ✕ · on the screen: “0 ms”', kind: 'Continuous',
+    how: 'Scissors rise on a rod and snip the sync vine; a red gel slides over the lamp and the Offline tag drops. The hand taps twice more: notes still drop into the store instantly and pile up in the outbox.',
+    sound: 'A two-blade snip, a swish as the red gel goes in, a clashing bronze for “wrong”, then quick taps and clacks for each queued note.' },
+  { t: 9.85, name: 'Back online', span: '9.25 – 10.2 s', text: '“Online” with a green ✓', kind: 'Continuous',
+    how: 'The cut vine heals and the tag flips over to Online with a tick. The queued notes flush along the vine and the server lights flash as each arrives.',
+    sound: 'A brush stroke as the vine regrows, a flap as the tag flips, a rising bronze pair for “right”, two quick clacks as the notes arrive.' },
+  { t: 12.4, name: 'Merge', span: '10.2 – 12.9 s', text: '“CRDT merge” · “Phone A” · “Phone B” · “title” · “due date” · “title + due date”', kind: 'Scene change',
+    how: 'Lace curtains close and part, because the story moves to a new idea: two devices. Each phone sends its offline edit along a vine to a three-gear mill. The gears turn under a gold gel and throw sparks, the merged note is pushed out with a tick, and both screens turn the same green.',
+    sound: 'Curtain swishes and a soft thud, two brush strokes, notes clacking into the mill, a wooden ratchet while the gears turn, a resolving bronze with the tick.' },
+  { t: 14.4, name: 'Takeaway', span: '12.9 – 15.0 s', text: '“Write locally, → sync later”', kind: 'Scene change',
+    how: 'The merged note flies at the lamp until its shadow fills the screen. The takeaway card drops and swings; a small phone, store and server stand along the ground and the phone takes a bow. Held for about 1.6 s.',
+    sound: 'Flaps and a rising whoosh for the fly-in, a low thud under the dark, a knock as the card lands, then a resolving bronze phrase over a low drone.' },
+];
+const grid = document.getElementById('grid');
+const canvases = BEATS.map((b, i) => {
+  const el = document.createElement('article'); el.className = 'beat';
+  el.innerHTML = `<div class="screen"><canvas width="1280" height="720" aria-label="Beat ${i + 1} key frame: ${b.name}"></canvas></div>
+    <div class="head"><h2><span class="n">${i + 1}</span>${b.name}</h2><span class="time">${b.span} · key frame at ${b.t.toFixed(2)} s</span></div>
+    <dl><dt>On screen</dt><dd class="onscreen">${b.text}</dd>
+    <dt>From previous</dt><dd><span class="kind${b.kind === 'Continuous' ? ' cont' : ''}">${b.kind}</span>${b.how}</dd>
+    <dt>Sounds</dt><dd>${b.sound}</dd></dl>`;
+  grid.appendChild(el);
+  return el.querySelector('canvas');
+});
+(async () => {
+  try { await Promise.all(FONT_SPECS.map((f) => document.fonts.load(f, 'AaZz09'))); await document.fonts.ready; } catch (e) {}
+  for (let i = 0; i < BEATS.length; i++) {
+    const ctx = canvases[i].getContext('2d');
+    explainer(ctx, 1280, 720, BEATS[i].t);
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+})();
+</script>
